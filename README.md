@@ -1,6 +1,11 @@
-# HR Solutions GPT
+`# HR Solutions GPT
 
 A Streamlit-based application that leverages AI to provide HR solutions and resume analysis using the CrewAI framework and Groq's language models.
+
+![Screenshot from 2024-11-27 07-14-14](https://github.com/user-attachments/assets/348f7f13-ba0e-4828-aa0d-ceef52fe7394)
+
+![Screenshot from 2024-11-27 07-22-00](https://github.com/user-attachments/assets/2a3bd882-65f9-4edf-87f9-aafd43ad30bc)
+
 
 ## 🚀 Features
 
