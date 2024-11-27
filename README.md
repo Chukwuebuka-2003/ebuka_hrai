@@ -61,3 +61,18 @@ streamlit run hrai.py
 - HR Problem Analyst: Analyzes challenges and provides contextual insights
 - Solution Architect: Develops practical, implementable solutions
 
+### Resume Review Module
+- Resume Analyst: Evaluates resume structure and content
+- Feedback Specialist: Provides actionable improvement suggestions
+
+## 🔑 Key Features
+- Real-time AI-powered analysis
+- Support for multiple file formats
+- Comprehensive feedback system
+- User-friendly interface
+- Example questions for reference
+
+## 🔒 Privacy & Security
+- Local file processing
+- Secure API communication
+- Environment variable protection for API keys
