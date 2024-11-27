@@ -4,4 +4,3 @@ langchain-groq
 python-dotenv
 PyPDF2
 python-docx
-chromadb>=0.4.24
