@@ -20,14 +20,14 @@ AVAILABLE_MODELS = {
 }
 
 def initialize_llm(model_name):
-    """Initialize ChatGroq with the Groq provider and prefixed model name."""
     prefixed_model_name = f"groq/{model_name}"  # Add Groq prefix
     return ChatGroq(
         temperature=0,
         model_name=prefixed_model_name,
-        provider="groq",  # Explicitly set Groq as the provider
+        model_kwargs={"provider": "groq"},  # Use model_kwargs for provider
         api_key=os.getenv("GROQ_API_KEY")
     )
+
 
 def extract_text_from_pdf(pdf_file):
     """Extract text from PDF files."""
