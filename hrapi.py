@@ -29,6 +29,7 @@ def initialize_llm(model_name):
 def analyze_with_llm(model_name, user_input):
     """
     Send user input to the Groq model using LiteLLM's completion API.
+    Extracts and returns the model's content as plain text.
     """
     try:
         response = completion(
@@ -38,7 +39,11 @@ def analyze_with_llm(model_name, user_input):
             ],
             api_key=os.getenv("GROQ_API_KEY")
         )
-        return response
+        # Extract the relevant content from the response
+        if hasattr(response, "choices") and response.choices:
+            return response.choices[0].message["content"]  # Adjust based on LiteLLM response structure
+        else:
+            raise ValueError("Unexpected response structure from the LLM")
     except Exception as e:
         raise ValueError(f"Error while communicating with the LLM: {str(e)}")
 
@@ -71,8 +76,8 @@ def analyze_hr_question():
 
     try:
         full_model_name = initialize_llm(model_name)
-        response = analyze_with_llm(full_model_name, question)
-        return jsonify({"result": response}), 200
+        response_content = analyze_with_llm(full_model_name, question)
+        return jsonify({"result": response_content}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -98,8 +103,8 @@ def review_resume():
             return jsonify({"error": "Unsupported file type"}), 400
 
         full_model_name = initialize_llm(model_name)
-        response = analyze_with_llm(full_model_name, resume_text)
-        return jsonify({"result": response}), 200
+        response_content = analyze_with_llm(full_model_name, resume_text)
+        return jsonify({"result": response_content}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
