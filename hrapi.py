@@ -90,7 +90,7 @@ def create_resume_review_crew(resume_text, model_name):
     return Crew(
         agents=[resume_analyst, feedback_specialist],
         tasks=[analyze_resume, provide_feedback],
-        verbose=2
+        verbose=True
     )
 
 def create_hr_crew(question, model_name):
@@ -142,7 +142,7 @@ def create_hr_crew(question, model_name):
     return Crew(
         agents=[hr_analyst, solution_architect],
         tasks=[analyze_question, provide_solution],
-        verbose=2
+        verbose=True
     )
 
 
