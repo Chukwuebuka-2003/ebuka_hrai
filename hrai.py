@@ -1,13 +1,9 @@
 import streamlit as st
 from crewai import Agent, Task, Crew
 from langchain_groq import ChatGroq
-from dotenv import load_dotenv
-import os
 import PyPDF2
 import docx
 import io
-
-load_dotenv()
 
 # Configure page
 st.set_page_config(page_title="HR Solutions Generator", page_icon="👥")
@@ -20,11 +16,11 @@ AVAILABLE_MODELS = {
 }
 
 @st.cache_resource
-def initialize_llm(model_name):
+def initialize_llm(model_name, api_key):
     return ChatGroq(
         temperature=0,
         model_name=model_name,
-        api_key=os.getenv("GROQ_API_KEY")
+        api_key=api_key
     )
 
 def extract_text_from_pdf(pdf_file):
@@ -41,9 +37,8 @@ def extract_text_from_docx(docx_file):
         text += paragraph.text + "\n"
     return text
 
-def create_resume_review_crew(resume_text, model_name):
-    llm = initialize_llm(model_name)
-    
+def create_resume_review_crew(resume_text, model_name, api_key):
+    llm = initialize_llm(model_name, api_key)
     resume_analyst = Agent(
         llm=llm,
         role="Resume Analyst",
@@ -53,7 +48,6 @@ def create_resume_review_crew(resume_text, model_name):
         allow_delegation=False,
         verbose=True
     )
-    
     feedback_specialist = Agent(
         llm=llm,
         role="Feedback Specialist",
@@ -63,7 +57,6 @@ def create_resume_review_crew(resume_text, model_name):
         allow_delegation=False,
         verbose=True
     )
-
     analyze_resume = Task(
         description=(
             f"Analyze this resume:\n{resume_text}\n"
@@ -75,7 +68,6 @@ def create_resume_review_crew(resume_text, model_name):
         expected_output="Detailed resume analysis",
         agent=resume_analyst
     )
-
     provide_feedback = Task(
         description=(
             "Based on the analysis, provide detailed feedback:\n"
@@ -87,16 +79,14 @@ def create_resume_review_crew(resume_text, model_name):
         expected_output="Comprehensive feedback with actionable suggestions",
         agent=feedback_specialist
     )
-
     return Crew(
         agents=[resume_analyst, feedback_specialist],
         tasks=[analyze_resume, provide_feedback],
         verbose=2
     )
 
-def create_hr_crew(question, model_name):
-    llm = initialize_llm(model_name)
-    
+def create_hr_crew(question, model_name, api_key):
+    llm = initialize_llm(model_name, api_key)
     hr_analyst = Agent(
         llm=llm,
         role="HR Problem Analyst",
@@ -106,7 +96,6 @@ def create_hr_crew(question, model_name):
         allow_delegation=False,
         verbose=True
     )
-    
     solution_architect = Agent(
         llm=llm,
         role="Solution Architect",
@@ -116,7 +105,6 @@ def create_hr_crew(question, model_name):
         allow_delegation=False,
         verbose=True
     )
-
     analyze_question = Task(
         description=(
             f"Analyze this HR question or challenge: {question}\n"
@@ -127,7 +115,6 @@ def create_hr_crew(question, model_name):
         expected_output="Clear analysis with key considerations",
         agent=hr_analyst
     )
-
     provide_solution = Task(
         description=(
             f"Based on the analysis, address this question: {question}\n"
@@ -139,7 +126,6 @@ def create_hr_crew(question, model_name):
         expected_output="Detailed, practical solution with examples",
         agent=solution_architect
     )
-
     return Crew(
         agents=[hr_analyst, solution_architect],
         tasks=[analyze_question, provide_solution],
@@ -150,71 +136,8 @@ def create_hr_crew(question, model_name):
 st.title("HR Solutions GPT")
 st.write("Ask HR questions or get resume feedback")
 
-# Tab selection
-tab1, tab2 = st.tabs(["HR Questions", "Resume Review"])
-
-with tab1:
-    # Model selection
-    selected_model = st.selectbox(
-        "Select Language Model:",
-        options=list(AVAILABLE_MODELS.keys()),
-        key="hr_model"
-    )
-
-    # Main input
-    question = st.text_area(
-        "Enter your HR-related question:", 
-        height=100,
-        placeholder="e.g., How can I improve team collaboration in a hybrid workplace?"
-    )
-
-    if st.button("Get Answer"):
-        if question:
-            with st.spinner("Analyzing and generating response..."):
-                try:
-                    model_name = AVAILABLE_MODELS[selected_model]
-                    crew = create_hr_crew(question, model_name)
-                    result = crew.kickoff(inputs={"question": question})
-                    
-                    st.success("Response generated!")
-                    st.markdown("### Solution")
-                    st.markdown(result)
-                except Exception as e:
-                    st.error(f"An error occurred: {str(e)}")
-        else:
-            st.warning("Please enter a question.")
-
-with tab2:
-    # Model selection for resume review
-    selected_model = st.selectbox(
-        "Select Language Model:",
-        options=list(AVAILABLE_MODELS.keys()),
-        key="resume_model"
-    )
-
-    uploaded_file = st.file_uploader(
-        "Upload your resume (PDF or DOCX)",
-        type=["pdf", "docx"]
-    )
-
-    if uploaded_file and st.button("Review Resume"):
-        with st.spinner("Analyzing resume..."):
-            try:
-                # Extract text based on file type
-                if uploaded_file.type == "application/pdf":
-                    resume_text = extract_text_from_pdf(uploaded_file)
-                else:
-                    resume_text = extract_text_from_docx(uploaded_file)
-
-                model_name = AVAILABLE_MODELS[selected_model]
-                crew = create_resume_review_crew(resume_text, model_name)
-                result = crew.kickoff(inputs={"resume_text": resume_text})
-                
-                st.success("Resume review completed!")
-                st.markdown("### Resume Analysis")
-                st.markdown(result)
-            except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
+# API Key Input
+api_key = st.sidebar.text_input("Enter your API key:", type="password")
 
 # Sidebar with examples
 with st.sidebar:
@@ -229,3 +152,62 @@ with st.sidebar:
     st.write("Try asking questions like:")
     for example in examples:
         st.write(f"• {example}")
+
+if not api_key:
+    st.warning("Please enter your API key in the sidebar to proceed.")
+else:
+    # Tab selection
+    tab1, tab2 = st.tabs(["HR Questions", "Resume Review"])
+
+    with tab1:
+        selected_model = st.selectbox(
+            "Select Language Model:",
+            options=list(AVAILABLE_MODELS.keys()),
+            key="hr_model"
+        )
+        question = st.text_area(
+            "Enter your HR-related question:",
+            height=100,
+            placeholder="e.g., How can I improve team collaboration in a hybrid workplace?"
+        )
+        if st.button("Get Answer"):
+            if question:
+                with st.spinner("Analyzing and generating response..."):
+                    try:
+                        model_name = AVAILABLE_MODELS[selected_model]
+                        crew = create_hr_crew(question, model_name, api_key)
+                        result = crew.kickoff(inputs={"question": question})
+                        st.success("Response generated!")
+                        st.markdown("### Solution")
+                        st.markdown(result)
+                    except Exception as e:
+                        st.error(f"An error occurred: {str(e)}")
+            else:
+                st.warning("Please enter a question.")
+
+    with tab2:
+        selected_model = st.selectbox(
+            "Select Language Model:",
+            options=list(AVAILABLE_MODELS.keys()),
+            key="resume_model"
+        )
+        uploaded_file = st.file_uploader(
+            "Upload your resume (PDF or DOCX)",
+            type=["pdf", "docx"]
+        )
+        if uploaded_file and st.button("Review Resume"):
+            with st.spinner("Analyzing resume..."):
+                try:
+                    if uploaded_file.type == "application/pdf":
+                        resume_text = extract_text_from_pdf(uploaded_file)
+                    else:
+                        resume_text = extract_text_from_docx(uploaded_file)
+
+                    model_name = AVAILABLE_MODELS[selected_model]
+                    crew = create_resume_review_crew(resume_text, model_name, api_key)
+                    result = crew.kickoff(inputs={"resume_text": resume_text})
+                    st.success("Resume review completed!")
+                    st.markdown("### Resume Analysis")
+                    st.markdown(result)
+                except Exception as e:
+                    st.error(f"An error occurred: {str(e)}")
