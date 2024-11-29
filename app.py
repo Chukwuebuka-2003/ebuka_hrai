@@ -4,6 +4,13 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
+# Set Streamlit Page Config with Icon
+st.set_page_config(
+    page_title="AI-Powered HR Tools",
+    page_icon="🧑‍💼",  # HR-related emoji (or use a custom icon path if hosted)
+    layout="wide"
+)
+
 # Initialize the Google Gemini LLM
 api_key = st.secrets["google_genai"]["api_key"]# Replace with your actual API key
 llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3, google_api_key=api_key)
