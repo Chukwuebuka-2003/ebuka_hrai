@@ -1,50 +1,39 @@
 import streamlit as st
 from langchain.agents import initialize_agent, Tool
 from langchain_groq import ChatGroq
-import PyPDF2
-import docx
 
-# Define tools for resume review
-def analyze_text_tool(text):
-    """Tool to analyze resume text."""
-    return f"Analyzing the following text: {text}"
+# Define tools for the conversational bot
+def hr_tips_tool(question):
+    """Tool to provide HR-related tips."""
+    # Example response
+    return f"Tips for your question: {question}"
 
-def suggest_feedback_tool(text):
-    """Tool to provide actionable feedback."""
-    return f"Providing feedback for: {text}"
-
-analyze_tool = Tool(
-    name="AnalyzeText",
-    func=analyze_text_tool,
-    description="Analyzes the resume text for key insights and strengths.",
+hr_tool = Tool(
+    name="HRTips",
+    func=hr_tips_tool,
+    description="Provides HR-related tips and suggestions.",
 )
 
-feedback_tool = Tool(
-    name="SuggestFeedback",
-    func=suggest_feedback_tool,
-    description="Suggests actionable feedback for improvement.",
-)
-
-# Custom prompt template to enforce structure
+# Custom prompt template for the HR bot
 CUSTOM_PROMPT_TEMPLATE = """
-You are a professional resume assistant. Always follow the format below:
+You are an HR expert assistant. Always follow this format:
 
-Thought: [Describe your reasoning]
-Action: [Choose one of the tools: AnalyzeText or SuggestFeedback]
-Action Input: [Provide the input text for the tool]
+Thought: [Explain your reasoning or thoughts]
+Action: [Choose the tool: HRTips]
+Action Input: [Provide the user's question or input]
 
-Observation: [Describe the result of the tool’s execution, only if an action is executed]
+Observation: [Describe the result from the tool’s execution]
 
-Final Answer: [Provide your complete and final response]
+Final Answer: [Provide a complete and concise response to the user's question]
 
 ---
 
 Input: {input}
 """
 
-# Define agents
-def get_resume_analyst(api_key):
-    """Creates an agent for analyzing resumes."""
+# Define the HR Tips Conversational Bot Agent
+def get_hr_bot_agent(api_key):
+    """Creates an agent for HR tips and advice."""
     llm = ChatGroq(
         model="gemma-7b-it",
         verbose=True,
@@ -52,72 +41,17 @@ def get_resume_analyst(api_key):
         groq_api_key=api_key,
     )
     return initialize_agent(
-        tools=[analyze_tool],
+        tools=[hr_tool],
         llm=llm,
         agent="zero-shot-react-description",
         verbose=True,
         handle_parsing_errors=True,
         prompt_template=CUSTOM_PROMPT_TEMPLATE,
     )
-
-def get_feedback_specialist(api_key):
-    """Creates an agent for providing actionable resume feedback."""
-    llm = ChatGroq(
-        model="gemma-7b-it",
-        verbose=True,
-        temperature=0.1,
-        groq_api_key=api_key,
-    )
-    return initialize_agent(
-        tools=[feedback_tool],
-        llm=llm,
-        agent="zero-shot-react-description",
-        verbose=True,
-        handle_parsing_errors=True,
-        prompt_template=CUSTOM_PROMPT_TEMPLATE,
-    )
-
-# Workflow for resume review
-def create_resume_review_workflow(resume_text, api_key):
-    """
-    Executes the resume review workflow using Groq-powered agents.
-    """
-    resume_analyst = get_resume_analyst(api_key)
-    feedback_specialist = get_feedback_specialist(api_key)
-
-    try:
-        analysis = resume_analyst.run(resume_text)
-    except Exception as e:
-        raise ValueError(f"Error in Resume Analyst: {e}")
-
-    try:
-        feedback = feedback_specialist.run(resume_text)
-    except Exception as e:
-        raise ValueError(f"Error in Feedback Specialist: {e}")
-
-    return {
-        "analysis": analysis,
-        "feedback": feedback,
-    }
-
-# Functions for extracting text
-def extract_text_from_pdf(pdf_file):
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-    return text
-
-def extract_text_from_docx(docx_file):
-    doc = docx.Document(docx_file)
-    text = ""
-    for paragraph in doc.paragraphs:
-        text += paragraph.text + "\n"
-    return text
 
 # Streamlit App
-st.title("Resume Review App")
-st.write("Upload your resume to receive a detailed analysis and actionable feedback.")
+st.title("HR Tips Bot")
+st.write("Ask HR-related questions and receive expert advice.")
 
 # Sidebar for API key input
 with st.sidebar:
@@ -134,23 +68,18 @@ with st.sidebar:
 
 # Main interface
 if api_key:
-    uploaded_file = st.file_uploader("Upload your resume (PDF or DOCX)", type=["pdf", "docx"])
+    # User input
+    user_question = st.text_area("Enter your HR-related question:", placeholder="e.g., How do I improve employee retention?")
 
-    if uploaded_file and st.button("Review Resume"):
-        with st.spinner("Processing your resume..."):
+    if st.button("Get HR Tips"):
+        with st.spinner("Thinking..."):
             try:
-                # Extract text from uploaded file
-                if uploaded_file.type == "application/pdf":
-                    resume_text = extract_text_from_pdf(uploaded_file)
-                else:
-                    resume_text = extract_text_from_docx(uploaded_file)
+                # Get HR Bot Agent
+                hr_bot = get_hr_bot_agent(api_key)
 
-                # Execute the resume review workflow
-                result = create_resume_review_workflow(resume_text, api_key)
-                st.success("Resume review completed!")
-                st.markdown("### Analysis")
-                st.markdown(result["analysis"])
-                st.markdown("### Feedback")
-                st.markdown(result["feedback"])
+                # Generate a response
+                response = hr_bot.run(user_question)
+                st.success("Here's what I found:")
+                st.markdown(f"**HR Advice:** {response}")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
