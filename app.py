@@ -8,7 +8,7 @@ from langchain.agents import create_tool_calling_agent, AgentExecutor, tool
 api_key = st.secrets["google_genai"]["api_key"]
 
 # Initialize the Google Gemini model
-llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3, google_api_key=api_key)
+llm = ChatGoogleGenerativeAI(model="gemini1.5flash", temperature=0.3, google_api_key=api_key)
 
 # Define a tool for resume review
 @tool
