@@ -2,6 +2,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
+from langchain.schema import HumanMessage
 from langchain.agents import create_tool_calling_agent, AgentExecutor, tool
 
 # Retrieve the API key from Streamlit secrets
@@ -19,7 +20,7 @@ def resume_review_tool(resume_text: str) -> str:
         f"{resume_text}\n\n"
         "Your feedback should include suggestions on structure, language, skills, and overall presentation."
     )
-    response = llm.generate([prompt])
+    response = llm.generate([HumanMessage(content=prompt)])
     return response.generations[0][0].text
 
 # Create the agent using the tool
@@ -59,8 +60,8 @@ if uploaded_file:
         st.subheader("AI Feedback")
         with st.spinner("Analyzing your resume..."):
             try:
-                feedback = agent_executor.invoke({"input": resume_text})
-                st.write(feedback['output'])
+                feedback = agent_executor({"input": resume_text})
+                st.write(feedback["output"])
             except Exception as e:
                 st.error(f"Error generating feedback: {e}")
     else:
