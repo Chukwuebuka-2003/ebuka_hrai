@@ -10,8 +10,9 @@ st.set_page_config(page_title="HR Solutions Generator", page_icon="👥")
 @st.cache_resource
 def initialize_llm(api_key):
     try:
+        # Initialize the Groq client without any additional parameters
         return Groq(api_key=api_key)
-    except Exception as e:
+    except TypeError as e:
         st.error(f"Failed to initialize Groq client: {str(e)}")
         return None
 
