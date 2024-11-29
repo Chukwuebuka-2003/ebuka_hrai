@@ -9,7 +9,11 @@ st.set_page_config(page_title="HR Solutions Generator", page_icon="👥")
 # Initialize the Groq client
 @st.cache_resource
 def initialize_llm(api_key):
-    return Groq(api_key=api_key)
+    try:
+        return Groq(api_key=api_key)
+    except Exception as e:
+        st.error(f"Failed to initialize Groq client: {str(e)}")
+        return None
 
 def extract_text_from_pdf(pdf_file):
     pdf_reader = PyPDF2.PdfReader(pdf_file)
