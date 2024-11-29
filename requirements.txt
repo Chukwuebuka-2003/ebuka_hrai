@@ -3,4 +3,4 @@ langchain
 langchain-groq
 PyPDF2
 python-docx
-langchain_google_gemini
+langchain_google_genai
