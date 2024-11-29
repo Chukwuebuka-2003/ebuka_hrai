@@ -1,83 +1,136 @@
 import streamlit as st
-from langchain.agents import initialize_agent, Tool
-from langchain_google_genai import ChatGoogleGenerativeAI  # Correct import for Gemini LLM
+from groq import Groq
+import PyPDF2
+import docx
 
-# Define tools for the conversational bot
-def hr_tips_tool(question):
-    """Tool to provide HR-related tips."""
-    return f"Tips for your question: {question}"
+# Configure page
+st.set_page_config(page_title="HR Solutions Generator", page_icon="👥")
 
-hr_tool = Tool(
-    name="HRTips",
-    func=hr_tips_tool,
-    description="Provides HR-related tips and suggestions.",
-)
+# Initialize the Groq client
+@st.cache_resource
+def initialize_llm(api_key):
+    return Groq(api_key=api_key)
 
-# Custom prompt template for the HR bot
-CUSTOM_PROMPT_TEMPLATE = """
-You are an HR expert assistant. Always follow this format:
+def extract_text_from_pdf(pdf_file):
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
 
-Thought: [Explain your reasoning or thoughts]
-Action: [Choose the tool: HRTips]
-Action Input: [Provide the user's question or input]
+def extract_text_from_docx(docx_file):
+    doc = docx.Document(docx_file)
+    text = ""
+    for paragraph in doc.paragraphs:
+        text += paragraph.text + "\n"
+    return text
 
-Observation: [Describe the result from the tool’s execution]
+def chat_with_gemma(prompt, llm):
+    try:
+        response = llm.chat.completions.create(
+            model="gemma-7b-it",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=4096  # Adjust according to your needs
+        )
+        return response['choices'][0]['message']['content']
+    except Exception as e:
+        st.error(f"Error communicating with the model: {str(e)}")
+        return None
 
-Final Answer: [Provide a complete and concise response to the user's question]
-
----
-
-Input: {input}
-"""
-
-# Define the HR Tips Conversational Bot Agent
-def get_hr_bot_agent(api_key):
-    """Creates an agent for HR tips and advice."""
-    llm = ChatGoogleGenerativeAI(temperature=0.1, model="gemini-1", api_key=api_key)  # Pass user-provided API key
-    return initialize_agent(
-        tools=[hr_tool],
-        llm=llm,
-        agent="zero-shot-react-description",
-        verbose=True,
-        handle_parsing_errors=True,
-        prompt_template=CUSTOM_PROMPT_TEMPLATE,
+def create_resume_review(resume_text, llm):
+    analysis_prompt = (
+        f"Analyze this resume:\n{resume_text}\n"
+        "1. Evaluate the overall structure and format\n"
+        "2. Assess the content quality and relevance\n"
+        "3. Identify strengths and weaknesses\n"
+        "4. Check for essential components"
     )
+    return chat_with_gemma(analysis_prompt, llm)
 
-# Streamlit App
-st.title("HR Tips Bot")
-st.write("Ask HR-related questions and receive expert advice.")
-
-# Sidebar for API key input
-with st.sidebar:
-    st.header("API Key Configuration")
-    api_key = st.text_input(
-        "Enter your Gemini API Key:",
-        type="password",
-        placeholder="Enter your API key here",
+def create_hr_solution(question, llm):
+    question_prompt = (
+        f"Analyze this HR question or challenge: {question}\n"
+        "1. Identify the core issue\n"
+        "2. Consider relevant HR best practices\n"
+        "3. Note any potential complications"
     )
-    if api_key:
-        st.success("✅ API Key Saved")
-    else:
-        st.warning("Please enter your Gemini API key to proceed.")
+    return chat_with_gemma(question_prompt, llm)
 
-# Main interface
-if api_key:
-    user_question = st.text_area(
-        "Enter your HR-related question:",
-        placeholder="e.g., How do I improve employee retention?",
-    )
+# Streamlit UI
+st.title("HR Solutions GPT")
+st.write("Ask HR questions or get resume feedback")
 
-    if st.button("Get HR Tips"):
-        with st.spinner("Thinking..."):
-            try:
-                # Get HR Bot Agent with API key
-                hr_bot = get_hr_bot_agent(api_key)
+# API Key Input
+if 'api_key' not in st.session_state:
+    st.session_state.api_key = None
 
-                # Generate a response
-                response = hr_bot.run(user_question)
-                st.success("Here's what I found:")
-                st.markdown(f"**HR Advice:** {response}")
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+api_key_input = st.sidebar.text_input("Enter your API key:", type="password")
+
+# Store the API key in session state
+if api_key_input:
+    st.session_state.api_key = api_key_input
+
+# Initialize the LLM if API key is provided
+if st.session_state.api_key:
+    llm = initialize_llm(st.session_state.api_key)
+
+    # Sidebar with examples
+    with st.sidebar:
+        st.header("Example Questions")
+        examples = [
+            "How can I improve employee retention in a remote work environment?",
+            "What are effective strategies for conducting performance reviews?",
+            "How should I handle conflicts between team members?",
+            "What's the best way to implement a new training program?",
+            "How can I create an effective employee onboarding process?"
+        ]
+        st.write("Try asking questions like:")
+        for example in examples:
+            st.write(f"• {example}")
+
+    # Tab selection
+    tab1, tab2 = st.tabs(["HR Questions", "Resume Review"])
+
+    with tab1:
+        question = st.text_area(
+            "Enter your HR-related question:",
+            height=100,
+            placeholder="e.g., How can I improve team collaboration in a hybrid workplace?"
+        )
+        if st.button("Get Answer"):
+            if question:
+                with st.spinner("Analyzing and generating response..."):
+                    result = create_hr_solution(question, llm)
+                    if result:
+                        st.success("Response generated!")
+                        st.markdown("### Solution")
+                        st.markdown(result)
+                    else:
+                        st.error("Failed to generate a response.")
+            else:
+                st.warning("Please enter a question.")
+
+    with tab2:
+        uploaded_file = st.file_uploader(
+            "Upload your resume (PDF or DOCX)",
+            type=["pdf", "docx"]
+        )
+        if uploaded_file and st.button("Review Resume"):
+            with st.spinner("Analyzing resume..."):
+                try:
+                    if uploaded_file.type == "application/pdf":
+                        resume_text = extract_text_from_pdf(uploaded_file)
+                    else:
+                        resume_text = extract_text_from_docx(uploaded_file)
+
+                    result = create_resume_review(resume_text, llm)
+                    if result:
+                        st.success("Resume review completed!")
+                        st.markdown("### Resume Analysis")
+                        st.markdown(result)
+                    else:
+                        st.error("Failed to analyze the resume.")
+                except Exception as e:
+                    st.error(f"An error occurred while processing the resume: {str(e)}")
 else:
-    st.error("Please enter your Gemini API key in the sidebar to use the bot.")
+    st.warning("Please enter your API key to proceed.")
