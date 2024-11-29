@@ -32,9 +32,9 @@ Input: {input}
 """
 
 # Define the HR Tips Conversational Bot Agent
-def get_hr_bot_agent():
+def get_hr_bot_agent(api_key):
     """Creates an agent for HR tips and advice."""
-    llm = ChatGoogleGemini(temperature=0.1, model="gemini-1")  # Gemini LLM instance
+    llm = ChatGoogleGemini(temperature=0.1, model="gemini-1", api_key=api_key)  # Pass user-provided API key
     return initialize_agent(
         tools=[hr_tool],
         llm=llm,
@@ -48,21 +48,37 @@ def get_hr_bot_agent():
 st.title("HR Tips Bot")
 st.write("Ask HR-related questions and receive expert advice.")
 
+# Sidebar for API key input
+with st.sidebar:
+    st.header("API Key Configuration")
+    api_key = st.text_input(
+        "Enter your Gemini API Key:",
+        type="password",
+        placeholder="Enter your API key here",
+    )
+    if api_key:
+        st.success("✅ API Key Saved")
+    else:
+        st.warning("Please enter your Gemini API key to proceed.")
+
 # Main interface
-user_question = st.text_area(
-    "Enter your HR-related question:",
-    placeholder="e.g., How do I improve employee retention?",
-)
+if api_key:
+    user_question = st.text_area(
+        "Enter your HR-related question:",
+        placeholder="e.g., How do I improve employee retention?",
+    )
 
-if st.button("Get HR Tips"):
-    with st.spinner("Thinking..."):
-        try:
-            # Get HR Bot Agent
-            hr_bot = get_hr_bot_agent()
+    if st.button("Get HR Tips"):
+        with st.spinner("Thinking..."):
+            try:
+                # Get HR Bot Agent with API key
+                hr_bot = get_hr_bot_agent(api_key)
 
-            # Generate a response
-            response = hr_bot.run(user_question)
-            st.success("Here's what I found:")
-            st.markdown(f"**HR Advice:** {response}")
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+                # Generate a response
+                response = hr_bot.run(user_question)
+                st.success("Here's what I found:")
+                st.markdown(f"**HR Advice:** {response}")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+else:
+    st.error("Please enter your Gemini API key in the sidebar to use the bot.")
