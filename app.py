@@ -5,7 +5,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 # Initialize the Google Gemini LLM
-api_key = st.secrets["google_genai"]["api_key"]
+api_key = st.secrets["google_genai"]["api_key"]# Replace with your actual API key
 llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3, google_api_key=api_key)
 
 # Define the prompt template for resume review
@@ -34,6 +34,17 @@ hr_question_chain = LLMChain(llm=llm, prompt=hr_prompt_template)
 # Streamlit App with Tabs
 st.title("AI-Powered HR Tools")
 tab1, tab2 = st.tabs(["Resume Reviewer", "HR Question Assistant"])
+
+# Add Sidebar with Example Questions
+st.sidebar.title("Example HR Questions")
+example_questions = [
+    "What are the best practices for conducting a job interview?",
+    "How should I negotiate my salary?",
+    "What is the proper format for a resignation letter?",
+    "How do I handle workplace conflicts professionally?",
+    "What are the top skills employers look for in 2024?"
+]
+selected_question = st.sidebar.radio("Choose an example question:", options=example_questions)
 
 # Tab 1: Resume Reviewer
 with tab1:
@@ -79,7 +90,7 @@ with tab2:
     st.write("Ask any HR-related questions, and the AI will provide professional advice.")
 
     # Input box for HR question
-    question = st.text_input("Enter your HR-related question:")
+    question = st.text_input("Enter your HR-related question:", value=selected_question)
 
     if question.strip():
         # Generate AI response
