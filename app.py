@@ -1,6 +1,6 @@
 import streamlit as st
 from langchain.agents import initialize_agent, Tool
-from langchain_groq import ChatGroq
+from langchain.chat_models import ChatGoogleGemini  # Gemini LLM
 
 # Define tools for the conversational bot
 def hr_tips_tool(question):
@@ -32,14 +32,9 @@ Input: {input}
 """
 
 # Define the HR Tips Conversational Bot Agent
-def get_hr_bot_agent(api_key):
+def get_hr_bot_agent():
     """Creates an agent for HR tips and advice."""
-    llm = ChatGroq(
-        model="gemma-7b-it",
-        verbose=True,
-        temperature=0.1,
-        groq_api_key=api_key,
-    )
+    llm = ChatGoogleGemini(temperature=0.1, model="gemini-1")  # Gemini LLM instance
     return initialize_agent(
         tools=[hr_tool],
         llm=llm,
@@ -53,33 +48,21 @@ def get_hr_bot_agent(api_key):
 st.title("HR Tips Bot")
 st.write("Ask HR-related questions and receive expert advice.")
 
-# Sidebar for API key input
-with st.sidebar:
-    st.header("API Key Configuration")
-    api_key = st.text_input(
-        "Enter your GROQ_API_KEY:",
-        type="password",
-        placeholder="Enter your API key",
-    )
-    if api_key:
-        st.success("✅ API Key Saved")
-    else:
-        st.warning("Please enter your API key to proceed.")
-
 # Main interface
-if api_key:
-    # User input
-    user_question = st.text_area("Enter your HR-related question:", placeholder="e.g., How do I improve employee retention?")
+user_question = st.text_area(
+    "Enter your HR-related question:",
+    placeholder="e.g., How do I improve employee retention?",
+)
 
-    if st.button("Get HR Tips"):
-        with st.spinner("Thinking..."):
-            try:
-                # Get HR Bot Agent
-                hr_bot = get_hr_bot_agent(api_key)
+if st.button("Get HR Tips"):
+    with st.spinner("Thinking..."):
+        try:
+            # Get HR Bot Agent
+            hr_bot = get_hr_bot_agent()
 
-                # Generate a response
-                response = hr_bot.run(user_question)
-                st.success("Here's what I found:")
-                st.markdown(f"**HR Advice:** {response}")
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+            # Generate a response
+            response = hr_bot.run(user_question)
+            st.success("Here's what I found:")
+            st.markdown(f"**HR Advice:** {response}")
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
