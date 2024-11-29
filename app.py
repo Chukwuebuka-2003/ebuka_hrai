@@ -5,7 +5,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 # Initialize the Google Gemini LLM
-api_key = "your_google_gemini_api_key"  # Replace with your actual API key
+api_key = st.secrets["google_genai"]["api_key"]
 llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3, google_api_key=api_key)
 
 # Define the prompt template for resume review
