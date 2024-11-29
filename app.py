@@ -1,11 +1,10 @@
 import streamlit as st
 from langchain.agents import initialize_agent, Tool
-from langchain.chat_models import ChatGoogleGemini  # Gemini LLM
+from langchain_google_genai import ChatGoogleGenerativeAI  # Correct import for Gemini LLM
 
 # Define tools for the conversational bot
 def hr_tips_tool(question):
     """Tool to provide HR-related tips."""
-    # Example response
     return f"Tips for your question: {question}"
 
 hr_tool = Tool(
@@ -34,7 +33,7 @@ Input: {input}
 # Define the HR Tips Conversational Bot Agent
 def get_hr_bot_agent(api_key):
     """Creates an agent for HR tips and advice."""
-    llm = ChatGoogleGemini(temperature=0.1, model="gemini-1", api_key=api_key)  # Pass user-provided API key
+    llm = ChatGoogleGenerativeAI(temperature=0.1, model="gemini-1", api_key=api_key)  # Pass user-provided API key
     return initialize_agent(
         tools=[hr_tool],
         llm=llm,
