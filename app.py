@@ -7,7 +7,7 @@ from langchain.agents import create_tool_calling_agent, AgentExecutor, tool
 # Retrieve the API key from Streamlit secrets
 api_key = st.secrets["google_genai"]["api_key"]
 
-# Initialize the Google Gemini model
+# Initialize the Google Gemini 1.5 Flash model
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3, google_api_key=api_key)
 
 # Define a tool for resume review
