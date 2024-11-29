@@ -1,83 +1,35 @@
-# HR Solutions GPT
+# AI-Powered HR Tools
 
-A Streamlit-based application that leverages AI to provide HR solutions and resume analysis using the CrewAI framework and Groq's language models.
+This project provides a suite of AI-powered tools for Human Resources (HR) professionals, job seekers, and organizations. Built using **Streamlit**, **LangChain**, and **Google Gemini LLM**, the app offers two main functionalities:
 
-![Screenshot from 2024-11-27 07-14-14](https://github.com/user-attachments/assets/348f7f13-ba0e-4828-aa0d-ceef52fe7394)
+1. **Resume Reviewer**: Upload your resume and get detailed AI-driven feedback on its structure, language, and presentation.
+2. **HR Question Assistant**: Ask HR-related questions and receive professional, AI-generated advice.
 
-![Screenshot from 2024-11-27 07-22-00](https://github.com/user-attachments/assets/2a3bd882-65f9-4edf-87f9-aafd43ad30bc)
+---
 
+## Features
 
-## 🚀 Features
+### 1. Resume Reviewer
+- **File Upload**: Supports resume uploads in PDF and TXT formats.
+- **AI Feedback**: Analyzes resumes and provides detailed suggestions on:
+  - Structure and layout
+  - Skills and relevance
+  - Overall presentation
+- **Interactive Display**: Shows the extracted text and AI feedback side-by-side.
 
-### 1. HR Questions Module
-- Interactive Q&A system for HR-related queries
-- Dual-agent analysis system:
-  - HR Problem Analyst for challenge evaluation
-  - Solution Architect for detailed, actionable solutions
-- Support for multiple language models:
-  - Gemma 7B
-  - Llama 3.2
-  - Mixtral 8x7B
+### 2. HR Question Assistant
+- **Custom Questions**: Users can type in any HR-related question.
+- **Example Questions**: A sidebar provides sample HR questions for quick access, such as:
+  - "How should I negotiate my salary?"
+  - "What are the best practices for conducting a job interview?"
+  - "How do I handle workplace conflicts professionally?"
+- **AI Responses**: Professional, detailed, and context-aware answers powered by Google Gemini LLM.
 
-### 2. Resume Review System
-- Automated resume analysis and feedback
-- Supports both PDF and DOCX file formats
-- Dual-agent review system:
-  - Resume Analyst for comprehensive evaluation
-  - Feedback Specialist for actionable improvements
-- Detailed analysis of structure, content, and formatting
+---
 
-## 🛠️ Technical Requirements
+## How to Run the App
 
-```python
-# Required Python packages
-streamlit
-crewai
-langchain-groq
-python-dotenv
-PyPDF2
-python-docx
-```
-## ⚙️ Setup
-1. Clone the repository
-   
-2. Install dependencies:
-- pip install -r requirements.txt
-3. Create a .env file with your Groq API key:
-- GROQ_API_KEY=your_api_key_here
-streamlit run hrai.py
-4. Run the Streamlit app:
-- streamlit run hrai.py
-
-
-## 🎯 Usage
-### HR Questions
-1. Select your preferred language model
-2. Enter your HR-related question in the text area
-3. Click "Get Answer" to receive detailed analysis and solutions
-
-### Resume Review
-1. Choose your preferred language model
-2. Upload a resume in PDF or DOCX format
-3. Click "Review Resume" to get comprehensive feedback
-
-## 🤖 AI Agents
-### HR Questions Module
-- HR Problem Analyst: Analyzes challenges and provides contextual insights
-- Solution Architect: Develops practical, implementable solutions
-
-### Resume Review Module
-- Resume Analyst: Evaluates resume structure and content
-- Feedback Specialist: Provides actionable improvement suggestions
-
-## 🔑 Key Features
-- Real-time AI-powered analysis
-- Support for multiple file formats
-- Comprehensive feedback system
-- User-friendly interface
-- Example questions for reference
-
-## 🔒 Privacy & Security
-- Local file processing
-- Secure API communication
-- Environment variable protection for API keys
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/Chukwuebuka-2003/ebuka_hrai.git
+   cd ebuka_hrai
