@@ -1,110 +1,124 @@
 import streamlit as st
 from PyPDF2 import PdfReader
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.agents import Tool, AgentExecutor
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
 
-# Set Streamlit Page Config with Icon
+# Set Streamlit Page Config
 st.set_page_config(
-    page_title="AI-Powered HR Tools",
-    page_icon="🧑‍💼",  # HR-related emoji (or use a custom icon path if hosted)
+    page_title="AI-Powered Career Tools",
+    page_icon="🤖",
     layout="wide"
 )
 
 # Initialize the Google Gemini LLM
-api_key = st.secrets["google_genai"]["api_key"]# Replace with your actual API key
+api_key = st.secrets["google_genai"]["api_key"]  # Replace with your actual API key
 llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3, google_api_key=api_key)
 
 # Define the prompt template for resume review
 resume_prompt_template = PromptTemplate(
     input_variables=["resume_text"],
     template=(
-        "You are a professional resume reviewer. Provide detailed feedback on the following resume:\n\n"
+        "You are an experienced resume reviewer. Analyze the following resume and provide constructive feedback:\n\n"
         "{resume_text}\n\n"
-        "Your feedback should include suggestions on structure, language, skills, and overall presentation."
+        "Include feedback on strengths, weaknesses, skills, formatting, and language improvement."
     ),
 )
 
-# Define the prompt template for HR-related questions
-hr_prompt_template = PromptTemplate(
-    input_variables=["question"],
+# Define the prompt template for career questions
+career_prompt_template = PromptTemplate(
+    input_variables=["query"],
     template=(
-        "You are an HR expert. Answer the following question with detailed and professional advice:\n\n"
-        "{question}"
+        "You are a career coach. Provide a detailed and professional answer to the following question:\n\n"
+        "{query}"
     ),
 )
-
-# Create LangChain LLM Chains
-resume_review_chain = LLMChain(llm=llm, prompt=resume_prompt_template)
-hr_question_chain = LLMChain(llm=llm, prompt=hr_prompt_template)
 
 # Streamlit App with Tabs
-st.title("AI-Powered HR Tools")
-tab1, tab2 = st.tabs(["Resume Reviewer", "HR Question Assistant"])
+st.title("AI-Powered Career Tools")
+tab1, tab2 = st.tabs(["Resume Reviewer", "Career Guidance Assistant"])
 
-# Add Sidebar with Example Questions
-st.sidebar.title("Example HR Questions")
-example_questions = [
-    "What are the best practices for conducting a job interview?",
-    "How should I negotiate my salary?",
-    "What is the proper format for a resignation letter?",
-    "How do I handle workplace conflicts professionally?",
-    "What are the top skills employers look for in 2024?"
-]
-selected_question = st.sidebar.radio("Choose an example question:", options=example_questions)
+# Agent Executor and Tool Setup
+tools = []
 
 # Tab 1: Resume Reviewer
 with tab1:
     st.header("Resume Reviewer")
-    st.write("Upload your resume to receive detailed feedback.")
+    st.write("Upload your resume to receive actionable feedback.")
 
-    # File uploader
+    # File uploader for resumes
     uploaded_file = st.file_uploader("Upload your resume (PDF or TXT)", type=["pdf", "txt"])
 
     if uploaded_file:
         # Extract text from the uploaded file
-        file_type = uploaded_file.type
         resume_text = ""
-        
-        if file_type == "application/pdf":
+        if uploaded_file.type == "application/pdf":
             try:
                 reader = PdfReader(uploaded_file)
                 resume_text = "\n".join(page.extract_text() for page in reader.pages if page.extract_text())
             except Exception as e:
                 st.error(f"Error processing PDF: {e}")
-        elif file_type == "text/plain":
+        elif uploaded_file.type == "text/plain":
             resume_text = uploaded_file.read().decode("utf-8")
-        
+
         if resume_text.strip():
             # Display the extracted resume text
             st.subheader("Extracted Resume Text")
             st.text_area("Resume Content", value=resume_text, height=300)
-            
-            # Generate AI feedback
-            st.subheader("AI Feedback")
-            with st.spinner("Analyzing your resume..."):
-                try:
-                    feedback = resume_review_chain.run({"resume_text": resume_text})
-                    st.write(feedback)
-                except Exception as e:
-                    st.error(f"Error generating feedback: {e}")
-        else:
-            st.error("Could not extract text from the uploaded file. Please try again.")
 
-# Tab 2: HR Question Assistant
+            # Add Resume Reviewer Tool
+            tools.append(
+                Tool(
+                    name="ResumeReviewer",
+                    description="Provides feedback on resumes.",
+                    func=lambda input_text: llm.generate_response(
+                        resume_prompt_template.format(resume_text=input_text)
+                    ),
+                )
+            )
+
+# Tab 2: Career Guidance Assistant
 with tab2:
-    st.header("HR Question Assistant")
-    st.write("Ask any HR-related questions, and the AI will provide professional advice.")
+    st.header("Career Guidance Assistant")
+    st.write("Ask career-related questions and receive expert advice.")
 
-    # Input box for HR question
-    question = st.text_input("Enter your HR-related question:", value=selected_question)
+    # Text input for general career questions
+    query = st.text_area("Ask your question here:")
 
-    if question.strip():
-        # Generate AI response
-        st.subheader("AI Response")
-        with st.spinner("Generating response..."):
+    if query.strip():
+        # Add Career Guidance Tool
+        tools.append(
+            Tool(
+                name="CareerAssistant",
+                description="Provides professional career advice.",
+                func=lambda input_text: llm.generate_response(
+                    career_prompt_template.format(query=input_text)
+                ),
+            )
+        )
+
+# Agent Executor
+if tools:
+    agent = AgentExecutor(
+        tools=tools,
+        llm=llm,  # Use the initialized Google GenAI model
+    )
+
+    # Run Agent Based on Input
+    if resume_text.strip() and uploaded_file:
+        st.subheader("AI Feedback for Resume")
+        with st.spinner("Analyzing your resume..."):
             try:
-                answer = hr_question_chain.run({"question": question})
-                st.write(answer)
+                resume_feedback = agent.run(resume_text)
+                st.write(resume_feedback)
+            except Exception as e:
+                st.error(f"Error generating feedback: {e}")
+
+    if query.strip():
+        st.subheader("AI Response to Career Query")
+        with st.spinner("Processing your question..."):
+            try:
+                career_feedback = agent.run(query)
+                st.write(career_feedback)
             except Exception as e:
                 st.error(f"Error generating response: {e}")
