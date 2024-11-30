@@ -1,7 +1,7 @@
 import streamlit as st
 from PyPDF2 import PdfReader
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents import Tool, AgentExecutor
+from langchain.agents import Tool, AgentExecutor, initialize_agent, AgentType
 from langchain.prompts import PromptTemplate
 
 # Set Streamlit Page Config
@@ -38,7 +38,7 @@ career_prompt_template = PromptTemplate(
 st.title("AI-Powered Career Tools")
 tab1, tab2 = st.tabs(["Resume Reviewer", "Career Guidance Assistant"])
 
-# Agent Executor and Tool Setup
+# Tools for the agent
 tools = []
 
 # Tab 1: Resume Reviewer
@@ -97,15 +97,18 @@ with tab2:
             )
         )
 
-# Agent Executor
+# Agent Initialization
 if tools:
-    agent = AgentExecutor(
+    # Initialize the agent with tools and LLM
+    agent = initialize_agent(
         tools=tools,
-        llm=llm,  # Use the initialized Google GenAI model
+        llm=llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Use the Zero Shot agent type
+        verbose=True,
     )
 
     # Run Agent Based on Input
-    if resume_text.strip() and uploaded_file:
+    if uploaded_file and resume_text.strip():
         st.subheader("AI Feedback for Resume")
         with st.spinner("Analyzing your resume..."):
             try:
